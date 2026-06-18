@@ -6,8 +6,46 @@ const money = value => `￥${Number(value || 0).toFixed(2)}`; // 定义金额格
 const pretty = value => JSON.stringify(value, null, 2); // 定义 JSON 美化输出函数。
 const fallbackImage = "/img/product-fallback.svg"; // 定义商品图片加载失败时使用的本地兜底图片。
 
-const escapeMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }; // 定义 HTML 转义字符表，避免后端字段被解释成标签。
-const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, ch => escapeMap[ch]); // 定义统一的 HTML 转义函数，所有动态字段渲染前都要先经过这里。
+const escapeMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }; // 定义 HTML 转义字符表。
+const esc = value => String(value == null ? "" : value).replace(/[&<>"']/g, ch => escapeMap[ch]); // 定义统一的 HTML 转义函数。
+
+// ===== Toast 通知系统 =====
+function showToast(message, type = "info", duration = 3000) {
+    const container = $("#toast-container");
+    const iconMap = { success: "✅", error: "❌", info: "ℹ️", warning: "⚠️" };
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-icon">${iconMap[type] || "ℹ️"}</span><span>${esc(message)}</span><button class="toast-close" aria-label="关闭">×</button>`;
+    container.appendChild(toast);
+    const close = () => {
+        toast.classList.add("toast-out");
+        toast.addEventListener("animationend", () => toast.remove(), { once: true });
+    };
+    toast.querySelector(".toast-close").addEventListener("click", close);
+    if (duration > 0) setTimeout(close, duration);
+}
+
+// ===== 骨架屏 =====
+function skeletonGrid(count = 4) {
+    return Array.from({ length: count }, () => `
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-img"></div>
+            <div class="skeleton-body">
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text short"></div>
+                <div class="skeleton skeleton-price"></div>
+                <div class="skeleton skeleton-btn"></div>
+            </div>
+        </div>`).join("");
+}
+
+// ===== 加载状态 =====
+function setLoading(element, loading) {
+    if (!element) return;
+    element.classList.toggle("loading", loading);
+    element.disabled = loading;
+}
 
 async function loadStats() { // 使用 JdbcTemplate 统计更新首屏。
     const data = await api.stats(); // 请求统计接口。
@@ -19,48 +57,89 @@ async function loadStats() { // 使用 JdbcTemplate 统计更新首屏。
 
 async function loadCategories() { // 使用 MyBatis XML 查询分类并渲染按钮。
     const response = await api.categories(); // 请求分类接口。
-    $("#category-tabs").innerHTML = response.data.map(category => `<button type="button" data-category="${esc(category)}">${esc(category)}</button>`).join(""); // 渲染分类按钮，分类名转义后写入。
+    $("#category-tabs").innerHTML = response.data.map(category => `<button type="button" data-category="${esc(category)}">${esc(category)}</button>`).join(""); // 渲染分类按钮。
 }
 
 async function loadProducts(keyword = "") { // 加载并渲染商品列表。
-    $("#product-status").textContent = keyword ? `正在搜索“${keyword}”...` : "正在加载全部商品..."; // 写入加载中文案。
+    $("#product-status").innerHTML = `<span class="spinner"></span> ${keyword ? `正在搜索“${esc(keyword)}”...` : "正在加载商品..."}`;
+    $("#product-grid").innerHTML = skeletonGrid(4); // 显示骨架屏。
     try {
         const response = await api.products(keyword); // 请求商品接口。
-        renderProducts(response.data, keyword ? `搜索“${keyword}”` : "全部商品"); // 渲染商品。
-        clearActiveCategory(); // 清掉分类按钮的选中态，回归到搜索/全部场景。
+        renderProducts(response.data, keyword ? `搜索“${esc(keyword)}”` : "全部商品"); // 渲染商品。
+        clearActiveCategory(); // 清掉分类按钮的选中态。
     } catch (error) { // 捕获接口失败。
         $("#product-status").textContent = `加载失败：${error.message}`; // 把错误信息显示在状态行。
+        $("#product-grid").innerHTML = "";
     }
 }
 
 function renderProducts(products, label = "当前筛选") { // 将商品数组渲染到商品网格。
     $("#product-status").textContent = `${label}：共 ${products.length} 个商品`; // 写入商品数量统计。
-    $("#product-grid").innerHTML = products.length ? products.map(card).join("") : "<p class='meta'>没有找到匹配的商品，可以换一个关键词。</p>"; // 渲染商品卡片或空状态。
+    if (!products.length) {
+        $("#product-grid").innerHTML = `
+            <div class="empty-state" style="grid-column: 1 / -1;">
+                <div class="empty-state-icon">🔍</div>
+                <p>没有找到匹配的商品，可以换一个关键词。</p>
+            </div>`;
+        return;
+    }
+    $("#product-grid").innerHTML = products.map(card).join(""); // 渲染商品卡片。
 }
 
 function card(product) { // 生成商品卡片 HTML，所有字段都经过 esc 处理。
-    const img = esc(product.imageUrl); // 转义图片地址。
-    const name = esc(product.name); // 转义商品名称。
-    const desc = esc(product.description); // 转义商品描述。
-    const category = esc(product.category); // 转义商品分类。
-    const fallback = esc(fallbackImage); // 转义兜底图片地址。
-    return `<article class="product-card"><img src="${img}" alt="${name}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'"><div class="content"><div class="meta">${category} / 库存 ${Number(product.stock) || 0}</div><h3>${name}</h3><p>${desc}</p><div class="price">${money(product.price)}</div><button type="button" data-add="${esc(product.id)}">加入购物车</button></div></article>`;
+    const img = esc(product.imageUrl);
+    const name = esc(product.name);
+    const desc = esc(product.description);
+    const category = esc(product.category);
+    const fallback = esc(fallbackImage);
+    const stock = Number(product.stock) || 0;
+    const stockClass = stock <= 3 ? "color:var(--danger);font-weight:700;" : "";
+    return `<article class="product-card">
+        <img src="${img}" alt="${name}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'">
+        <div class="content">
+            <div class="meta">${category} / <span style="${stockClass}">库存 ${stock}</span></div>
+            <h3>${name}</h3>
+            <p>${desc}</p>
+            <div class="price">${money(product.price)}</div>
+            <button type="button" data-add="${esc(product.id)}">加入购物车</button>
+        </div>
+    </article>`;
 }
 
 async function loadCart() { // 加载并渲染购物车。
     const cart = await api.cart(); // 请求购物车接口。
-    $("#cart-list").innerHTML = cart.items.length ? cart.items.map(line).join("") : "<p class='meta'>购物车还是空的。</p>"; // 渲染购物车行或空状态。
+    if (!cart.items.length) {
+        $("#cart-list").innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🛒</div>
+                <p>购物车还是空的，快去选购心仪商品吧。</p>
+            </div>`;
+    } else {
+        $("#cart-list").innerHTML = cart.items.map(line).join("");
+    }
     $("#cart-total").textContent = `合计：${money(cart.total)}`; // 写入合计金额。
 }
 
 function line(item) { // 生成购物车行 HTML。
-    const productName = esc(item.product.name); // 转义商品名称。
-    return `<div class="line-item"><span>${productName} × ${Number(item.quantity) || 0}</span><strong>${money(item.subtotal)}</strong><button type="button" class="secondary" data-remove="${esc(item.product.id)}">移除</button></div>`;
+    const productName = esc(item.product.name);
+    return `<div class="line-item">
+        <span>${productName} × ${Number(item.quantity) || 0}</span>
+        <strong>${money(item.subtotal)}</strong>
+        <button type="button" class="secondary small" data-remove="${esc(item.product.id)}">移除</button>
+    </div>`;
 }
 
 async function loadCustomers() { // 使用原生 JDBC 查询并渲染客户列表。
     const response = await api.customers(); // 请求客户接口。
-    $("#customer-list").innerHTML = response.data.length ? response.data.map(customerLine).join("") : "<p class='meta'>暂无客户。</p>"; // 渲染客户行或空状态。
+    if (!response.data.length) {
+        $("#customer-list").innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">👤</div>
+                <p>暂无客户。</p>
+            </div>`;
+    } else {
+        $("#customer-list").innerHTML = response.data.map(customerLine).join("");
+    }
 }
 
 function customerLine(customer) { // 生成客户行 HTML。
@@ -69,14 +148,26 @@ function customerLine(customer) { // 生成客户行 HTML。
 
 async function loadOrders() { // 使用 JPA 查询并渲染订单列表。
     const response = await api.orders(); // 请求订单接口。
-    $("#order-list").innerHTML = response.data.length ? response.data.map(orderLine).join("") : "<p class='meta'>暂无订单。</p>"; // 渲染订单行或空状态。
+    if (!response.data.length) {
+        $("#order-list").innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <p>暂无订单。</p>
+            </div>`;
+    } else {
+        $("#order-list").innerHTML = response.data.map(orderLine).join("");
+    }
 }
 
 function orderLine(order) { // 生成订单行 HTML。
-    return `<div class="line-item"><span>订单 ${esc(order.id)} / ${esc(order.customerName)} / ${esc(order.status)}</span><strong>${money(order.totalAmount)}</strong></div>`;
+    const statusColor = order.status === "已创建" ? "var(--success)" : (order.status === "已取消" ? "var(--danger)" : "var(--tab)");
+    return `<div class="line-item">
+        <span>订单 ${esc(order.id)} / ${esc(order.customerName)} / <span style="color:${statusColor};font-weight:600;">${esc(order.status)}</span></span>
+        <strong>${money(order.totalAmount)}</strong>
+    </div>`;
 }
 
-function setActiveCategory(category) { // 给分类按钮加上选中态，便于用户看出当前过滤条件。
+function setActiveCategory(category) { // 给分类按钮加上选中态。
     $("#category-tabs").querySelectorAll("button").forEach(btn => btn.classList.toggle("is-active", btn.dataset.category === category));
 }
 
@@ -84,86 +175,133 @@ function clearActiveCategory() { // 清除分类按钮的选中态。
     $("#category-tabs").querySelectorAll("button").forEach(btn => btn.classList.remove("is-active"));
 }
 
+// ===== 事件绑定 =====
 $("#search-form").addEventListener("submit", event => { // 绑定商品搜索事件。
     event.preventDefault(); // 阻止表单默认刷新。
-    loadProducts($("#keyword").value).catch(showTechError); // 触发搜索。
+    loadProducts($("#keyword").value).catch(err => showTechError(err)); // 触发搜索。
 });
 
 $("#category-tabs").addEventListener("click", event => { // 绑定分类查询事件。
     const category = event.target.dataset.category; // 读取被点击按钮的分类。
     if (!category) return; // 点空白处直接忽略。
     setActiveCategory(category); // 高亮当前分类。
-    $("#product-status").textContent = `正在加载“${category}”分类...`; // 写入加载中文案。
+    $("#product-status").innerHTML = `<span class="spinner"></span> 正在加载“${esc(category)}”分类...`; // 写入加载中文案。
+    $("#product-grid").innerHTML = skeletonGrid(4); // 骨架屏。
     api.productsByCategory(category)
-        .then(response => renderProducts(response.data, `分类“${category}”`))
-        .catch(error => $("#product-status").textContent = `加载失败：${error.message}`);
+        .then(response => renderProducts(response.data, `分类“${esc(category)}”`))
+        .catch(error => { $("#product-status").textContent = `加载失败：${error.message}`; $("#product-grid").innerHTML = ""; });
 });
 
-$("#featured-products").addEventListener("click", () => api.featuredProducts().then(response => renderProducts(response.data, "推荐商品")).then(clearActiveCategory).catch(showTechError)); // 绑定推荐商品事件。
-$("#low-stock-products").addEventListener("click", () => api.lowStockProducts().then(response => renderProducts(response.data, "低库存商品")).then(clearActiveCategory).catch(showTechError)); // 绑定低库存商品事件。
-$("#cheap-products").addEventListener("click", () => api.cheapProducts().then(response => renderProducts(response.data, "500 元以内商品")).then(clearActiveCategory).catch(showTechError)); // 绑定低价商品事件。
+$("#featured-products").addEventListener("click", () => {
+    const btn = $("#featured-products");
+    setLoading(btn, true);
+    api.featuredProducts().then(response => renderProducts(response.data, "推荐商品")).then(clearActiveCategory).then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
+$("#low-stock-products").addEventListener("click", () => {
+    const btn = $("#low-stock-products");
+    setLoading(btn, true);
+    api.lowStockProducts().then(response => renderProducts(response.data, "低库存商品")).then(clearActiveCategory).then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
+$("#cheap-products").addEventListener("click", () => {
+    const btn = $("#cheap-products");
+    setLoading(btn, true);
+    api.cheapProducts().then(response => renderProducts(response.data, "500 元以内商品")).then(clearActiveCategory).then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
 
 $("#product-grid").addEventListener("click", event => { // 绑定加入购物车事件。
     const id = event.target.dataset.add; // 读取按钮上的商品 ID。
     if (!id) return; // 点空白处直接忽略。
     const button = event.target; // 缓存按钮元素。
     const original = button.textContent; // 暂存原始文案。
-    button.disabled = true; // 防止重复点击。
-    button.textContent = "加入中..."; // 显示进行中文案。
+    setLoading(button, true); // 防止重复点击并显示加载。
     api.addCart(id)
-        .then(loadCart)
-        .then(() => { button.textContent = "已加入"; setTimeout(() => { button.textContent = original; button.disabled = false; }, 900); }) // 成功后短暂展示反馈。
-        .catch(error => { button.textContent = original; button.disabled = false; showTechError(error); }); // 失败时恢复按钮并提示。
+        .then(() => loadCart())
+        .then(() => { showToast("已加入购物车", "success", 2000); })
+        .then(() => { button.textContent = "已加入"; button.classList.remove("loading"); button.disabled = false; setTimeout(() => { button.textContent = original; }, 1200); })
+        .catch(error => { button.textContent = original; button.disabled = false; button.classList.remove("loading"); showToast(error.message, "error"); });
 });
 
 $("#cart-list").addEventListener("click", event => { // 绑定移除购物车事件。
     const id = event.target.dataset.remove; // 读取要移除的商品 ID。
-    if (id) api.removeCart(id).then(loadCart).catch(showTechError); // 触发移除。
+    if (!id) return;
+    api.removeCart(id).then(() => loadCart()).then(() => showToast("已从购物车移除", "info", 2000)).catch(err => showToast(err.message, "error"));
 });
 
-$("#clear-cart").addEventListener("click", () => api.clearCart().then(loadCart).catch(showTechError)); // 绑定清空购物车事件。
+$("#clear-cart").addEventListener("click", () => {
+    const btn = $("#clear-cart");
+    setLoading(btn, true);
+    api.clearCart().then(() => loadCart()).then(() => showToast("购物车已清空", "info", 2000)).then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showToast(err.message, "error"); });
+});
 
 $("#checkout-form").addEventListener("submit", event => { // 绑定下单事件。
     event.preventDefault(); // 阻止表单默认刷新。
     const name = $("#customer-name").value.trim(); // 读取联系人姓名。
     const phone = $("#customer-phone").value.trim(); // 读取联系人电话。
+    const btn = event.target.querySelector("button[type='submit']");
     if (!name || !phone) { $("#checkout-message").textContent = "请填写姓名和电话"; return; } // 简单的前端校验。
+    setLoading(btn, true);
     api.checkout(name, phone)
-        .then(data => { $("#checkout-message").textContent = `订单 ${data.data.id} 已创建`; return Promise.allSettled([loadCart(), loadProducts(), loadOrders(), loadStats()]); })
-        .catch(error => $("#checkout-message").textContent = error.message);
+        .then(data => { $("#checkout-message").textContent = `订单 ${data.data.id} 已创建`; showToast(`订单 ${data.data.id} 创建成功！`, "success", 4000); return Promise.allSettled([loadCart(), loadProducts(), loadOrders(), loadStats()]); })
+        .then(() => setLoading(btn, false))
+        .catch(error => { $("#checkout-message").textContent = error.message; setLoading(btn, false); showToast(error.message, "error"); });
 });
 
-$("#reload-customers").addEventListener("click", () => loadCustomers().catch(showTechError)); // 绑定刷新客户事件。
+$("#reload-customers").addEventListener("click", () => {
+    const btn = $("#reload-customers");
+    setLoading(btn, true);
+    loadCustomers().then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
 
 $("#customer-form").addEventListener("submit", event => { // 绑定新增客户事件。
     event.preventDefault(); // 阻止默认刷新。
     const customer = readCustomerForm(); // 读取表单。
+    const btn = event.target.querySelector("button[type='submit']");
+    setLoading(btn, true);
     api.createCustomer(customer)
-        .then(() => { $("#customer-message").textContent = "客户新增成功"; return Promise.allSettled([loadCustomers(), loadStats()]); })
-        .catch(error => $("#customer-message").textContent = error.message);
+        .then(() => { $("#customer-message").textContent = "客户新增成功"; showToast("客户新增成功", "success", 3000); return Promise.allSettled([loadCustomers(), loadStats()]); })
+        .then(() => setLoading(btn, false))
+        .catch(error => { $("#customer-message").textContent = error.message; setLoading(btn, false); showToast(error.message, "error"); });
 });
 
-$("#reload-orders").addEventListener("click", () => loadOrders().catch(showTechError)); // 绑定刷新订单事件。
+$("#reload-orders").addEventListener("click", () => {
+    const btn = $("#reload-orders");
+    setLoading(btn, true);
+    loadOrders().then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
 $("#created-count").addEventListener("click", () => api.createdOrderCount().then(response => $("#order-output").textContent = `已创建订单数量：${response.data}`).catch(showTechError)); // 绑定订单状态统计事件。
 $("#sales-total").addEventListener("click", () => api.salesTotal().then(response => $("#order-output").textContent = `销售总额：${money(response.data)}`).catch(showTechError)); // 绑定销售额统计事件。
 
 $("#login-form").addEventListener("submit", event => { // 绑定管理员登录事件。
     event.preventDefault(); // 阻止默认刷新。
+    const btn = event.target.querySelector("button[type='submit']");
+    setLoading(btn, true);
     api.login($("#admin-name").value, $("#admin-password").value)
-        .then(data => { store.setToken(data.token); $("#login-message").textContent = "JWT 已保存，可以新增商品"; })
-        .catch(error => $("#login-message").textContent = error.message);
+        .then(data => { store.setToken(data.token); $("#login-message").textContent = "JWT 已保存，可以新增商品"; showToast("管理员登录成功", "success", 3000); })
+        .catch(error => { $("#login-message").textContent = error.message; showToast(error.message, "error"); })
+        .finally(() => setLoading(btn, false));
 });
 
 $("#product-form").addEventListener("submit", event => { // 绑定新增商品事件。
     event.preventDefault(); // 阻止默认刷新。
     const product = readProductForm(); // 读取表单。
+    const btn = event.target.querySelector("button[type='submit']");
+    setLoading(btn, true);
     api.createProduct(store.getToken(), product)
-        .then(() => { $("#product-message").textContent = "商品新增成功"; return Promise.allSettled([loadProducts(), loadCategories(), loadStats()]); })
-        .catch(error => $("#product-message").textContent = error.message);
+        .then(() => { $("#product-message").textContent = "商品新增成功"; showToast("商品新增成功", "success", 3000); return Promise.allSettled([loadProducts(), loadCategories(), loadStats()]); })
+        .then(() => setLoading(btn, false))
+        .catch(error => { $("#product-message").textContent = error.message; setLoading(btn, false); showToast(error.message, "error"); });
 });
 
-$("#soap-demo").addEventListener("click", () => api.soap().then(xml => $("#tech-output").textContent = xml).catch(showTechError)); // 绑定 SOAP XML 演示事件。
-$("#matrix-demo").addEventListener("click", () => api.matrix().then(response => $("#tech-output").textContent = pretty(response.data)).catch(showTechError)); // 绑定技术覆盖矩阵事件。
+$("#soap-demo").addEventListener("click", () => {
+    const btn = $("#soap-demo");
+    setLoading(btn, true);
+    api.soap().then(xml => $("#tech-output").textContent = xml).then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
+$("#matrix-demo").addEventListener("click", () => {
+    const btn = $("#matrix-demo");
+    setLoading(btn, true);
+    api.matrix().then(response => $("#tech-output").textContent = pretty(response.data)).then(() => setLoading(btn, false)).catch(err => { setLoading(btn, false); showTechError(err); });
+});
 
 function readProductForm() { // 从表单读取新商品对象。
     return { name: $("#new-name").value, category: $("#new-category").value, price: $("#new-price").value, stock: Number($("#new-stock").value), imageUrl: $("#new-image").value, description: $("#new-desc").value, featured: false };
@@ -193,5 +331,8 @@ Promise.allSettled(bootTasks.map(([, fn]) => fn())).then(results => { // 用 all
     if (failed.length) { // 有失败模块时统一在技术输出区提示。
         const messages = failed.map(entry => `${entry.label}：${entry.result.reason && entry.result.reason.message ? entry.result.reason.message : "请求失败"}`).join("\n");
         $("#tech-output").textContent = `部分模块加载失败，可单独重试。\n${messages}`;
+        showToast("部分模块加载失败，请检查技术输出区", "warning", 5000);
+    } else {
+        showToast("所有模块加载成功，欢迎使用！", "success", 3000);
     }
 });

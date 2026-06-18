@@ -17,7 +17,13 @@ public class SoapController { // 定义 SOAP 风格 Web Service 演示控制器�
         if (envelope.contains("<featuredPets")) { return wrap("<featuredPetsResponse>" + productService.featured().stream().map(product -> "<pet><name>" + escape(product.getName()) + "</name></pet>").reduce("", String::concat) + "</featuredPetsResponse>"); } // SOAP 功能二：返回推荐商品。 
         if (envelope.contains("<lowStockPets")) { return wrap("<lowStockPetsResponse>" + productService.lowStock(5).stream().map(product -> "<pet><name>" + escape(product.getName()) + "</name><stock>" + product.getStock() + "</stock></pet>").reduce("", String::concat) + "</lowStockPetsResponse>"); } // SOAP 功能三：返回低库存商品。 
         if (envelope.contains("<categories")) { return wrap("<categoriesResponse>" + productService.categories().stream().map(category -> "<category>" + escape(category) + "</category>").reduce("", String::concat) + "</categoriesResponse>"); } // SOAP 功能四：返回商品分类。 
-        Long id = envelope.contains("<id>") ? Long.valueOf(envelope.replaceAll("(?s).*<id>(\\d+)</id>.*", "$1")) : 1L; // 从 XML 中取出商品编号。 
+        Long id = 1L; // 默认查询商品编号为1。 
+        if (envelope.contains("<id>")) { // 当 XML 中包含 id 标签时。 
+            try { // 尝试解析商品编号。 
+                String idStr = envelope.replaceAll("(?s).*<id>(\\d+)</id>.*", "$1"); // 从 XML 中提取数字。 
+                id = Long.valueOf(idStr); // 转换为 Long 类型。 
+            } catch (NumberFormatException ignored) { } // 如果提取结果不是数字，继续使用默认值。 
+        } // 结束 id 解析。 
         Product product = productService.get(id); // 查询商品对象。 
         String name = product == null ? "不存在" : product.getName(); // 生成商品名称响应值。 
         String price = product == null ? "0" : product.getPrice().toPlainString(); // 生成商品价格响应值。 

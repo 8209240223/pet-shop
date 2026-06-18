@@ -1,0 +1,52 @@
+# 编译输出
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE 配置
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# H2 数据库文件
+data/
+*.db
+*.mv.db
+*.trace.db
+
+# 日志
+*.log
+logs/
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 前端构建（如项目扩展）
+node_modules/
+dist/
+build/
+
+# 环境配置（敏感信息）
+.env
+.env.local
+
+# 测试报告
+surefire-reports/
