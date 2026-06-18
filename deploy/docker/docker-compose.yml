@@ -1,0 +1,31 @@
+services:
+  petshop-backend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.backend
+    container_name: petshop-backend
+    environment:
+      - TZ=Asia/Shanghai
+      - JAVA_OPTS=-Dfile.encoding=UTF-8
+    volumes:
+      - petshop-data:/usr/local/tomcat/data
+      - petshop-tomcat-logs:/usr/local/tomcat/logs
+    ports:
+      - "8080:8080"
+
+  petshop-frontend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.frontend
+    container_name: petshop-frontend
+    depends_on:
+      - petshop-backend
+    ports:
+      - "80:80"
+    volumes:
+      - petshop-nginx-logs:/var/log/nginx
+
+volumes:
+  petshop-data:
+  petshop-tomcat-logs:
+  petshop-nginx-logs:

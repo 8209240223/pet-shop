@@ -1,0 +1,2 @@
+# 每天 23:30 备份 Nginx 和 Tomcat 日志，保留最近 7 天。
+30 23 * * * /bin/bash /opt/pet-shop-learning/deploy/linux/backup-logs.sh >> /var/log/petshop-log-backup.log 2>&1

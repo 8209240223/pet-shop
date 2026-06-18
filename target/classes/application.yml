@@ -1,0 +1,39 @@
+server: # 配置 Web 服务器。 
+  port: 8080 # 指定默认访问端口。 
+spring: # 配置 Spring Boot。 
+  datasource: # 配置数据库连接。 
+    driver-class-name: org.h2.Driver # 使用 H2 数据库驱动。 
+    url: jdbc:h2:file:./data/petshop;MODE=MySQL;DATABASE_TO_UPPER=false # 使用本地文件数据库并兼容 MySQL 语法。 
+    username: sa # 使用 H2 默认用户名。 
+    password: "" # 使用 H2 默认空密码。 
+  h2: # 配置 H2 控制台。 
+    console: # 配置浏览器数据库控制台。 
+      enabled: true # 开启 H2 控制台方便学习 SQL。 
+      path: /h2-console # 指定 H2 控制台地址。 
+  jpa: # 配置 JPA 和 Hibernate。 
+    hibernate: # 配置 Hibernate 行为。 
+      ddl-auto: none # 使用 schema.sql 建表而不是自动改表。 
+    show-sql: true # 在控制台显示 Hibernate SQL。 
+    properties: # 配置 Hibernate 扩展属性。 
+      hibernate: # 指定 Hibernate 属性命名空间。 
+        format_sql: true # 格式化 SQL 便于学习。 
+  mvc: # 配置 Spring MVC。 
+    view: # 配置 JSP 视图解析器。 
+      prefix: /WEB-INF/jsp/ # 指定 JSP 文件目录。 
+      suffix: .jsp # 指定 JSP 文件后缀。 
+  sql: # 配置 SQL 初始化。 
+    init: # 配置启动时执行 SQL。 
+      mode: always # 每次启动都检查初始化脚本。 
+      encoding: UTF-8 # 强制按 UTF-8 读取 schema.sql 和 data.sql，避免 Windows 默认编码导致中文数据乱码。 
+      continue-on-error: true # 已存在表时继续启动。 
+mybatis: # 配置 MyBatis。 
+  mapper-locations: classpath:mapper/*.xml # 指定 MyBatis XML 映射文件位置。 
+  configuration: # 配置 MyBatis 运行参数。 
+    map-underscore-to-camel-case: true # 开启下划线字段到驼峰属性的映射。 
+mybatis-plus: # 配置 MyBatis-Plus。 
+  configuration: # 配置 MyBatis-Plus 内部 MyBatis。 
+    map-underscore-to-camel-case: true # 开启下划线字段到驼峰属性的映射。 
+petshop: # 配置本项目自定义属性。 
+  jwt-secret: learning-pet-shop-secret # 指定演示 JWT 签名密钥。 
+  admin-name: admin # 指定演示管理员用户名。 
+  admin-password: 123456 # 指定演示管理员密码。 

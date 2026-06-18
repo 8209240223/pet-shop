@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="基于 Spring Boot + REST + MyBatis + JPA 的全技术宠物商店学习项目，覆盖商品浏览、购物车、订单、客户与管理后台。">
+    <meta name="theme-color" content="#14786a">
+    <title>全技术宠物商店学习项目</title>
+    <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">宠物商店学习站</div>
+    <nav class="nav" aria-label="主导航">
+        <a href="#shop">商品</a>
+        <a href="#cart">购物车</a>
+        <a href="#customers">客户</a>
+        <a href="#orders">订单</a>
+        <a href="#admin">管理</a>
+        <a href="/legacy/jsp-shop">JSP页面</a>
+        <a href="/legacy/servlet-mvc">Servlet</a>
+        <a href="/h2-console">H2数据库</a>
+    </nav>
+</header>
+<main class="layout">
+    <section class="hero" aria-labelledby="hero-title">
+        <div>
+            <p class="eyebrow">Spring Boot + REST + MyBatis + JPA + 模块化前端</p>
+            <h1 id="hero-title">能下单、能管理、能看旧技术和新技术的宠物商店</h1>
+            <p class="summary">默认数据已经准备好，直接搜索商品、加入购物车、结算订单，也可以登录管理员新增商品。</p>
+            <div class="hero-actions">
+                <a class="button-link" href="#shop">开始选购</a>
+                <a class="button-link ghost" href="#admin">演示管理员功能</a>
+            </div>
+        </div>
+        <aside class="hero-panel" aria-label="实时数据概览">
+            <span class="panel-label">实时数据概览</span>
+            <div class="stat-metrics">
+                <div><strong id="stat-products">0</strong><span>商品</span></div>
+                <div><strong id="stat-customers">0</strong><span>客户</span></div>
+                <div><strong id="stat-orders">0</strong><span>订单</span></div>
+            </div>
+            <small id="stat-detail">正在读取 JdbcTemplate 统计...</small>
+        </aside>
+    </section>
+
+    <section id="shop" class="workspace" aria-labelledby="shop-title">
+        <div class="section-title">
+            <h2 id="shop-title">商品浏览</h2>
+            <form id="search-form" class="inline-form" role="search">
+                <label class="visually-hidden" for="keyword">搜索商品关键字</label>
+                <input id="keyword" name="keyword" type="search" inputmode="search" autocomplete="off" placeholder="搜索猫咪、狗狗、用品">
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+        <div id="category-tabs" class="tabs" role="group" aria-label="商品分类"></div>
+        <div class="toolbar-row">
+            <button id="featured-products" type="button">推荐商品</button>
+            <button id="low-stock-products" type="button">低库存</button>
+            <button id="cheap-products" type="button">500元以内</button>
+        </div>
+        <p id="product-status" class="status-line" role="status" aria-live="polite">正在加载商品...</p>
+        <div id="product-grid" class="product-grid"></div>
+    </section>
+
+    <section id="cart" class="workspace two-column" aria-labelledby="cart-title">
+        <div>
+            <div class="section-title">
+                <h2 id="cart-title">购物车</h2>
+                <button id="clear-cart" type="button">清空</button>
+            </div>
+            <div id="cart-list" class="list-box" aria-live="polite"></div>
+            <strong id="cart-total" class="total">合计：￥0</strong>
+        </div>
+        <form id="checkout-form" class="panel-form" aria-labelledby="checkout-title">
+            <h2 id="checkout-title">结算订单</h2>
+            <div>
+                <label class="field-label" for="customer-name">联系人姓名</label>
+                <input id="customer-name" name="customer-name" type="text" autocomplete="name" value="学习用户" placeholder="联系人姓名" required>
+            </div>
+            <div>
+                <label class="field-label" for="customer-phone">联系电话</label>
+                <input id="customer-phone" name="customer-phone" type="tel" inputmode="tel" autocomplete="tel" pattern="[0-9+\-\s]{6,20}" value="13800000000" placeholder="联系电话" required>
+            </div>
+            <button type="submit">提交订单</button>
+            <p id="checkout-message" role="status" aria-live="polite"></p>
+        </form>
+    </section>
+
+    <section id="customers" class="workspace two-column" aria-labelledby="customers-title">
+        <div>
+            <div class="section-title">
+                <h2 id="customers-title">客户管理</h2>
+                <button id="reload-customers" type="button">刷新客户</button>
+            </div>
+            <div id="customer-list" class="list-box" aria-live="polite"></div>
+        </div>
+        <form id="customer-form" class="panel-form" aria-labelledby="new-customer-title">
+            <h2 id="new-customer-title">新增客户</h2>
+            <div>
+                <label class="field-label" for="member-name">客户姓名</label>
+                <input id="member-name" name="member-name" type="text" autocomplete="name" value="王同学" placeholder="客户姓名" required>
+            </div>
+            <div>
+                <label class="field-label" for="member-phone">客户电话</label>
+                <input id="member-phone" name="member-phone" type="tel" inputmode="tel" autocomplete="tel" value="13800000003" placeholder="客户电话" required>
+            </div>
+            <div>
+                <label class="field-label" for="member-email">客户邮箱</label>
+                <input id="member-email" name="member-email" type="email" autocomplete="email" value="wang@example.com" placeholder="客户邮箱" required>
+            </div>
+            <div>
+                <label class="field-label" for="member-address">客户地址</label>
+                <input id="member-address" name="member-address" type="text" autocomplete="street-address" value="课程实验室 101" placeholder="客户地址">
+            </div>
+            <button type="submit">用原生 JDBC 新增</button>
+            <p id="customer-message" role="status" aria-live="polite"></p>
+        </form>
+    </section>
+
+    <section id="orders" class="workspace two-column" aria-labelledby="orders-title">
+        <div>
+            <div class="section-title">
+                <h2 id="orders-title">订单查看</h2>
+                <button id="reload-orders" type="button">刷新订单</button>
+            </div>
+            <div id="order-list" class="list-box" aria-live="polite"></div>
+        </div>
+        <div class="panel-form">
+            <h2>JPA 统计</h2>
+            <button id="created-count" type="button">统计已创建订单</button>
+            <button id="sales-total" type="button">统计销售额</button>
+            <pre id="order-output" class="mini-code" aria-live="polite">等待操作</pre>
+        </div>
+    </section>
+
+    <section id="admin" class="workspace two-column" aria-label="管理员区域">
+        <form id="login-form" class="panel-form" aria-labelledby="admin-login-title">
+            <h2 id="admin-login-title">管理员登录</h2>
+            <div>
+                <label class="field-label" for="admin-name">管理员账号</label>
+                <input id="admin-name" name="admin-name" type="text" autocomplete="username" value="admin" placeholder="管理员账号" required>
+            </div>
+            <div>
+                <label class="field-label" for="admin-password">管理员密码</label>
+                <input id="admin-password" name="admin-password" type="password" autocomplete="current-password" value="123456" placeholder="管理员密码" required>
+            </div>
+            <button type="submit">获取 JWT</button>
+            <p id="login-message" role="status" aria-live="polite"></p>
+            <small class="meta">学习项目默认账号 admin / 123456，请勿用于真实环境。</small>
+        </form>
+        <form id="product-form" class="panel-form" aria-labelledby="new-product-title">
+            <h2 id="new-product-title">新增商品</h2>
+            <div>
+                <label class="field-label" for="new-name">商品名称</label>
+                <input id="new-name" name="new-name" type="text" value="新手猫砂盆" placeholder="商品名称" required>
+            </div>
+            <div>
+                <label class="field-label" for="new-category">商品分类</label>
+                <input id="new-category" name="new-category" type="text" value="用品" placeholder="商品分类" required>
+            </div>
+            <div>
+                <label class="field-label" for="new-price">商品价格</label>
+                <input id="new-price" name="new-price" type="number" inputmode="decimal" min="0" step="0.01" value="88.00" placeholder="商品价格" required>
+            </div>
+            <div>
+                <label class="field-label" for="new-stock">商品库存</label>
+                <input id="new-stock" name="new-stock" type="number" inputmode="numeric" min="0" step="1" value="12" placeholder="商品库存" required>
+            </div>
+            <div>
+                <label class="field-label" for="new-image">图片地址</label>
+                <input id="new-image" name="new-image" type="url" inputmode="url" autocomplete="off" value="https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&amp;fit=crop&amp;w=900&amp;q=80" placeholder="图片地址">
+            </div>
+            <div>
+                <label class="field-label" for="new-desc">商品描述</label>
+                <textarea id="new-desc" name="new-desc" placeholder="商品描述">带防溅挡板和清洁铲，适合新手家庭。</textarea>
+            </div>
+            <button type="submit">新增商品</button>
+            <p id="product-message" role="status" aria-live="polite"></p>
+        </form>
+    </section>
+
+    <section class="workspace" aria-labelledby="tech-title">
+        <div class="section-title">
+            <h2 id="tech-title">技术实验入口</h2>
+            <div class="toolbar-row">
+                <button id="soap-demo" type="button">调用 SOAP XML</button>
+                <button id="matrix-demo" type="button">技术覆盖矩阵</button>
+            </div>
+        </div>
+        <div id="tech-output" class="code-box" aria-live="polite">REST、SOAP、JDBC、JPA、MyBatis、MyBatis-Plus、AOP、Interceptor、JSP、Servlet、ES6 Module、CommonJS、webpack、Vite 都在项目中有对应文件或入口。</div>
+    </section>
+</main>
+<script type="module" src="/js/modules/app.js"></script>
+</body>
+</html>

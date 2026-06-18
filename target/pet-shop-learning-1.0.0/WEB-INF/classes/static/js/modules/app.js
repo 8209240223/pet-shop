@@ -1,0 +1,39 @@
+import { api } from "./api.js"; // 引入 REST API 模块。 
+import { store } from "./store.js"; // 引入前端状态仓库模块。 
+const $ = selector => document.querySelector(selector); // 定义简短 DOM 查询函数。 
+const money = value => `￥${Number(value || 0).toFixed(2)}`; // 定义金额格式化函数。 
+const pretty = value => JSON.stringify(value, null, 2); // 定义 JSON 美化输出函数。 
+const fallbackImage = "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=900&q=80"; // 定义商品图片加载失败时使用的兜底图片。 
+async function loadStats() { const data = await api.stats(); $("#stat-products").textContent = data.data.productCount; $("#stat-customers").textContent = data.data.customerCount; $("#stat-orders").textContent = data.data.orderCount; $("#stat-detail").textContent = `${data.data.productCount} 个商品，${data.data.customerCount} 个客户，${data.data.orderCount} 个订单`; } // 使用 JdbcTemplate 统计更新首屏。 
+async function loadCategories() { const response = await api.categories(); $("#category-tabs").innerHTML = response.data.map(category => `<button data-category="${category}">${category}</button>`).join(""); } // 使用 MyBatis XML 查询分类并渲染按钮。 
+async function loadProducts(keyword = "") { $("#product-status").textContent = keyword ? `正在搜索“${keyword}”...` : "正在加载全部商品..."; const response = await api.products(keyword); renderProducts(response.data, keyword ? `搜索“${keyword}”` : "全部商品"); } // 加载并渲染商品列表。 
+function renderProducts(products, label = "当前筛选") { $("#product-status").textContent = `${label}：共 ${products.length} 个商品`; $("#product-grid").innerHTML = products.length ? products.map(card).join("") : "<p class='meta'>没有找到匹配的商品，可以换一个关键词。</p>"; } // 将商品数组渲染到商品网格。 
+function card(product) { return `<article class="product-card"><img src="${product.imageUrl}" alt="${product.name}" loading="lazy" onerror="this.src='${fallbackImage}'"><div class="content"><div class="meta">${product.category} / 库存 ${product.stock}</div><h3>${product.name}</h3><p>${product.description}</p><div class="price">${money(product.price)}</div><button data-add="${product.id}">加入购物车</button></div></article>`; } // 生成商品卡片 HTML。 
+async function loadCart() { const cart = await api.cart(); $("#cart-list").innerHTML = cart.items.length ? cart.items.map(line).join("") : "<p class='meta'>购物车还是空的。</p>"; $("#cart-total").textContent = `合计：${money(cart.total)}`; } // 加载并渲染购物车。 
+function line(item) { return `<div class="line-item"><span>${item.product.name} × ${item.quantity}</span><strong>${money(item.subtotal)}</strong><button class="secondary" data-remove="${item.product.id}">移除</button></div>`; } // 生成购物车行 HTML。 
+async function loadCustomers() { const response = await api.customers(); $("#customer-list").innerHTML = response.data.map(customerLine).join(""); } // 使用原生 JDBC 查询并渲染客户列表。 
+function customerLine(customer) { return `<div class="line-item"><span>${customer.name} / ${customer.phone}</span><strong>${customer.email}</strong></div>`; } // 生成客户行 HTML。 
+async function loadOrders() { const response = await api.orders(); $("#order-list").innerHTML = response.data.length ? response.data.map(orderLine).join("") : "<p class='meta'>暂无订单。</p>"; } // 使用 JPA 查询并渲染订单列表。 
+function orderLine(order) { return `<div class="line-item"><span>订单 ${order.id} / ${order.customerName} / ${order.status}</span><strong>${money(order.totalAmount)}</strong></div>`; } // 生成订单行 HTML。 
+$("#search-form").addEventListener("submit", event => { event.preventDefault(); loadProducts($("#keyword").value).catch(showTechError); }); // 绑定商品搜索事件。 
+$("#category-tabs").addEventListener("click", event => { const category = event.target.dataset.category; if (category) { $("#product-status").textContent = `正在加载“${category}”分类...`; api.productsByCategory(category).then(response => renderProducts(response.data, `分类“${category}”`)).catch(showTechError); } }); // 绑定分类查询事件。 
+$("#featured-products").addEventListener("click", () => api.featuredProducts().then(response => renderProducts(response.data, "推荐商品")).catch(showTechError)); // 绑定推荐商品事件。 
+$("#low-stock-products").addEventListener("click", () => api.lowStockProducts().then(response => renderProducts(response.data, "低库存商品")).catch(showTechError)); // 绑定低库存商品事件。 
+$("#cheap-products").addEventListener("click", () => api.cheapProducts().then(response => renderProducts(response.data, "500 元以内商品")).catch(showTechError)); // 绑定低价商品事件。 
+$("#product-grid").addEventListener("click", event => { const id = event.target.dataset.add; if (id) { event.target.textContent = "已加入"; api.addCart(id).then(loadCart).finally(() => event.target.textContent = "加入购物车").catch(showTechError); } }); // 绑定加入购物车事件。 
+$("#cart-list").addEventListener("click", event => { const id = event.target.dataset.remove; if (id) { api.removeCart(id).then(loadCart).catch(showTechError); } }); // 绑定移除购物车事件。 
+$("#clear-cart").addEventListener("click", () => api.clearCart().then(loadCart).catch(showTechError)); // 绑定清空购物车事件。 
+$("#checkout-form").addEventListener("submit", event => { event.preventDefault(); api.checkout($("#customer-name").value, $("#customer-phone").value).then(data => { $("#checkout-message").textContent = `订单 ${data.data.id} 已创建`; return Promise.all([loadCart(), loadProducts(), loadOrders(), loadStats()]); }).catch(error => $("#checkout-message").textContent = error.message); }); // 绑定下单事件。 
+$("#reload-customers").addEventListener("click", () => loadCustomers().catch(showTechError)); // 绑定刷新客户事件。 
+$("#customer-form").addEventListener("submit", event => { event.preventDefault(); const customer = readCustomerForm(); api.createCustomer(customer).then(() => { $("#customer-message").textContent = "客户新增成功"; return Promise.all([loadCustomers(), loadStats()]); }).catch(error => $("#customer-message").textContent = error.message); }); // 绑定新增客户事件。 
+$("#reload-orders").addEventListener("click", () => loadOrders().catch(showTechError)); // 绑定刷新订单事件。 
+$("#created-count").addEventListener("click", () => api.createdOrderCount().then(response => $("#order-output").textContent = `已创建订单数量：${response.data}`).catch(showTechError)); // 绑定订单状态统计事件。 
+$("#sales-total").addEventListener("click", () => api.salesTotal().then(response => $("#order-output").textContent = `销售总额：${money(response.data)}`).catch(showTechError)); // 绑定销售额统计事件。 
+$("#login-form").addEventListener("submit", event => { event.preventDefault(); api.login($("#admin-name").value, $("#admin-password").value).then(data => { store.setToken(data.token); $("#login-message").textContent = "JWT 已保存，可以新增商品"; }).catch(error => $("#login-message").textContent = error.message); }); // 绑定管理员登录事件。 
+$("#product-form").addEventListener("submit", event => { event.preventDefault(); const product = readProductForm(); api.createProduct(store.getToken(), product).then(() => { $("#product-message").textContent = "商品新增成功"; return Promise.all([loadProducts(), loadCategories(), loadStats()]); }).catch(error => $("#product-message").textContent = error.message); }); // 绑定新增商品事件。 
+$("#soap-demo").addEventListener("click", () => api.soap().then(xml => $("#tech-output").textContent = xml).catch(showTechError)); // 绑定 SOAP XML 演示事件。 
+$("#matrix-demo").addEventListener("click", () => api.matrix().then(response => $("#tech-output").textContent = pretty(response.data)).catch(showTechError)); // 绑定技术覆盖矩阵事件。 
+function readProductForm() { return { name: $("#new-name").value, category: $("#new-category").value, price: $("#new-price").value, stock: Number($("#new-stock").value), imageUrl: $("#new-image").value, description: $("#new-desc").value, featured: false }; } // 从表单读取新商品对象。 
+function readCustomerForm() { return { name: $("#member-name").value, phone: $("#member-phone").value, email: $("#member-email").value, address: $("#member-address").value }; } // 从表单读取新客户对象。 
+function showTechError(error) { $("#tech-output").textContent = error.message; } // 将错误展示到技术输出区。 
+Promise.all([loadStats(), loadCategories(), loadProducts(), loadCart(), loadCustomers(), loadOrders()]).catch(showTechError); // 页面启动时并行加载所有主要功能数据。 

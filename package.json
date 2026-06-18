@@ -1,0 +1,21 @@
+{
+  "name": "pet-shop-learning-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "vite": "vite",
+    "webpack": "webpack --config webpack.config.cjs"
+  },
+  "dependencies": {
+    "@angular/core": "^17.3.12",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "vite": "^5.4.19",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^5.1.4"
+  }
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html> <!-- 声明现代 HTML5 页面。 -->
+<html lang="zh-CN"> <!-- 设置页面语言为中文。 -->
+<head> <!-- 开始页面头部。 -->
+    <meta charset="UTF-8"> <!-- 设置页面字符编码为 UTF-8。 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 设置移动端响应式视口。 -->
+    <title>全技术宠物商店学习项目</title> <!-- 设置浏览器标题。 -->
+    <link rel="stylesheet" href="/css/style.css"> <!-- 引入模块化 CSS 样式。 -->
+</head> <!-- 结束页面头部。 -->
+<body> <!-- 开始页面主体。 -->
+<header class="topbar"> <!-- 定义顶部导航栏。 -->
+    <div class="brand">宠物商店学习站</div> <!-- 显示网站品牌名称。 -->
+    <nav class="nav"> <!-- 定义导航区域。 -->
+        <a href="#shop">商品</a> <!-- 跳转到商品区域。 -->
+        <a href="#cart">购物车</a> <!-- 跳转到购物车区域。 -->
+        <a href="#customers">客户</a> <!-- 跳转到客户区域。 -->
+        <a href="#orders">订单</a> <!-- 跳转到订单区域。 -->
+        <a href="#admin">管理</a> <!-- 跳转到管理区域。 -->
+        <a href="/legacy/jsp-shop">JSP页面</a> <!-- 打开传统 JSP 页面。 -->
+        <a href="/legacy/servlet-mvc">Servlet</a> <!-- 打开传统 Servlet 页面。 -->
+        <a href="/h2-console">H2数据库</a> <!-- 打开 H2 数据库控制台。 -->
+    </nav> <!-- 结束导航区域。 -->
+</header> <!-- 结束顶部导航栏。 -->
+<main class="layout"> <!-- 定义主内容布局。 -->
+    <section class="hero"> <!-- 定义首屏业务区域。 -->
+        <div> <!-- 定义首屏文字容器。 -->
+            <p class="eyebrow">Spring Boot + REST + MyBatis + JPA + 模块化前端</p> <!-- 展示技术摘要。 -->
+            <h1>能下单、能管理、能看旧技术和新技术的宠物商店</h1> <!-- 展示页面主标题。 -->
+            <p class="summary">默认数据已经准备好，直接搜索商品、加入购物车、结算订单，也可以登录管理员新增商品。</p> <!-- 展示页面说明。 -->
+            <div class="hero-actions"> <!-- 定义首屏快捷操作按钮。 -->
+                <a class="button-link" href="#shop">开始选购</a> <!-- 快速跳转到商品浏览区。 -->
+                <a class="button-link ghost" href="#admin">演示管理员功能</a> <!-- 快速跳转到管理员演示区。 -->
+            </div> <!-- 结束首屏快捷操作按钮。 -->
+        </div> <!-- 结束首屏文字容器。 -->
+        <div class="hero-panel"> <!-- 定义首屏统计面板。 -->
+            <span class="panel-label">实时数据概览</span> <!-- 显示统计面板标签。 -->
+            <div class="stat-metrics"> <!-- 定义三项业务统计容器。 -->
+                <div><strong id="stat-products">0</strong><span>商品</span></div> <!-- 显示商品数量统计。 -->
+                <div><strong id="stat-customers">0</strong><span>客户</span></div> <!-- 显示客户数量统计。 -->
+                <div><strong id="stat-orders">0</strong><span>订单</span></div> <!-- 显示订单数量统计。 -->
+            </div> <!-- 结束三项业务统计容器。 -->
+            <small id="stat-detail">正在读取 JdbcTemplate 统计...</small> <!-- 显示统计详情。 -->
+        </div> <!-- 结束首屏统计面板。 -->
+    </section> <!-- 结束首屏业务区域。 -->
+    <section id="shop" class="workspace"> <!-- 定义商品工作区。 -->
+        <div class="section-title"> <!-- 定义区域标题容器。 -->
+            <h2>商品浏览</h2> <!-- 显示商品区域标题。 -->
+            <form id="search-form" class="inline-form"> <!-- 定义商品搜索表单。 -->
+                <input id="keyword" placeholder="搜索猫咪、狗狗、用品"> <!-- 输入商品关键字。 -->
+                <button type="submit">搜索</button> <!-- 提交商品搜索。 -->
+            </form> <!-- 结束商品搜索表单。 -->
+        </div> <!-- 结束区域标题容器。 -->
+        <div id="category-tabs" class="tabs"></div> <!-- 显示 MyBatis XML 查询到的分类按钮。 -->
+        <div class="toolbar-row"> <!-- 定义商品辅助功能按钮行。 -->
+            <button id="featured-products" type="button">推荐商品</button> <!-- 调用 MyBatis-Plus 推荐商品功能。 -->
+            <button id="low-stock-products" type="button">低库存</button> <!-- 调用 MyBatis XML 低库存功能。 -->
+            <button id="cheap-products" type="button">500元以内</button> <!-- 调用 MyBatis XML 价格区间功能。 -->
+        </div> <!-- 结束商品辅助功能按钮行。 -->
+        <p id="product-status" class="status-line">正在加载商品...</p> <!-- 显示商品筛选和加载状态。 -->
+        <div id="product-grid" class="product-grid"></div> <!-- 商品卡片由 ES6 模块动态渲染。 -->
+    </section> <!-- 结束商品工作区。 -->
+    <section id="cart" class="workspace two-column"> <!-- 定义购物车和订单工作区。 -->
+        <div> <!-- 定义购物车列。 -->
+            <div class="section-title"> <!-- 定义购物车标题容器。 -->
+                <h2>购物车</h2> <!-- 显示购物车标题。 -->
+                <button id="clear-cart" type="button">清空</button> <!-- 清空购物车按钮。 -->
+            </div> <!-- 结束购物车标题容器。 -->
+            <div id="cart-list" class="list-box"></div> <!-- 购物车内容容器。 -->
+            <strong id="cart-total" class="total">合计：￥0</strong> <!-- 显示购物车合计金额。 -->
+        </div> <!-- 结束购物车列。 -->
+        <form id="checkout-form" class="panel-form"> <!-- 定义订单结算表单。 -->
+            <h2>结算订单</h2> <!-- 显示结算标题。 -->
+            <input id="customer-name" value="学习用户" placeholder="联系人姓名"> <!-- 输入联系人姓名。 -->
+            <input id="customer-phone" value="13800000000" placeholder="联系电话"> <!-- 输入联系人电话。 -->
+            <button type="submit">提交订单</button> <!-- 提交订单按钮。 -->
+            <p id="checkout-message"></p> <!-- 显示下单结果消息。 -->
+        </form> <!-- 结束订单结算表单。 -->
+    </section> <!-- 结束购物车和订单工作区。 -->
+    <section id="customers" class="workspace two-column"> <!-- 定义客户管理工作区。 -->
+        <div> <!-- 定义客户列表列。 -->
+            <div class="section-title"> <!-- 定义客户标题容器。 -->
+                <h2>客户管理</h2> <!-- 显示客户管理标题。 -->
+                <button id="reload-customers" type="button">刷新客户</button> <!-- 刷新客户列表按钮。 -->
+            </div> <!-- 结束客户标题容器。 -->
+            <div id="customer-list" class="list-box"></div> <!-- 客户列表容器。 -->
+        </div> <!-- 结束客户列表列。 -->
+        <form id="customer-form" class="panel-form"> <!-- 定义客户新增表单。 -->
+            <h2>新增客户</h2> <!-- 显示客户新增标题。 -->
+            <input id="member-name" value="王同学" placeholder="客户姓名"> <!-- 输入客户姓名。 -->
+            <input id="member-phone" value="13800000003" placeholder="客户电话"> <!-- 输入客户电话。 -->
+            <input id="member-email" value="wang@example.com" placeholder="客户邮箱"> <!-- 输入客户邮箱。 -->
+            <input id="member-address" value="课程实验室 101" placeholder="客户地址"> <!-- 输入客户地址。 -->
+            <button type="submit">用原生 JDBC 新增</button> <!-- 提交客户新增。 -->
+            <p id="customer-message"></p> <!-- 显示客户操作结果。 -->
+        </form> <!-- 结束客户新增表单。 -->
+    </section> <!-- 结束客户管理工作区。 -->
+    <section id="orders" class="workspace two-column"> <!-- 定义订单管理工作区。 -->
+        <div> <!-- 定义订单列表列。 -->
+            <div class="section-title"> <!-- 定义订单标题容器。 -->
+                <h2>订单查看</h2> <!-- 显示订单查看标题。 -->
+                <button id="reload-orders" type="button">刷新订单</button> <!-- 刷新订单列表按钮。 -->
+            </div> <!-- 结束订单标题容器。 -->
+            <div id="order-list" class="list-box"></div> <!-- 订单列表容器。 -->
+        </div> <!-- 结束订单列表列。 -->
+        <div class="panel-form"> <!-- 定义订单统计面板。 -->
+            <h2>JPA 统计</h2> <!-- 显示 JPA 统计标题。 -->
+            <button id="created-count" type="button">统计已创建订单</button> <!-- 查询状态订单数量。 -->
+            <button id="sales-total" type="button">统计销售额</button> <!-- 查询订单销售额。 -->
+            <pre id="order-output" class="mini-code">等待操作</pre> <!-- 显示订单统计结果。 -->
+        </div> <!-- 结束订单统计面板。 -->
+    </section> <!-- 结束订单管理工作区。 -->
+    <section id="admin" class="workspace two-column"> <!-- 定义管理和技术实验工作区。 -->
+        <form id="login-form" class="panel-form"> <!-- 定义管理员登录表单。 -->
+            <h2>管理员登录</h2> <!-- 显示管理员登录标题。 -->
+            <input id="admin-name" value="admin" placeholder="管理员账号"> <!-- 输入管理员账号。 -->
+            <input id="admin-password" value="123456" type="password" placeholder="管理员密码"> <!-- 输入管理员密码。 -->
+            <button type="submit">获取 JWT</button> <!-- 提交登录并获取 JWT。 -->
+            <p id="login-message"></p> <!-- 显示登录结果。 -->
+        </form> <!-- 结束管理员登录表单。 -->
+        <form id="product-form" class="panel-form"> <!-- 定义商品新增表单。 -->
+            <h2>新增商品</h2> <!-- 显示新增商品标题。 -->
+            <input id="new-name" value="新手猫砂盆" placeholder="商品名称"> <!-- 输入商品名称。 -->
+            <input id="new-category" value="用品" placeholder="商品分类"> <!-- 输入商品分类。 -->
+            <input id="new-price" value="88.00" placeholder="商品价格"> <!-- 输入商品价格。 -->
+            <input id="new-stock" value="12" placeholder="商品库存"> <!-- 输入商品库存。 -->
+            <input id="new-image" value="https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=900&q=80" placeholder="图片地址"> <!-- 输入商品图片地址。 -->
+            <textarea id="new-desc">带防溅挡板和清洁铲，适合新手家庭。</textarea> <!-- 输入商品描述。 -->
+            <button type="submit">新增商品</button> <!-- 提交新增商品。 -->
+            <p id="product-message"></p> <!-- 显示新增商品结果。 -->
+        </form> <!-- 结束商品新增表单。 -->
+    </section> <!-- 结束管理和技术实验工作区。 -->
+    <section class="workspace"> <!-- 定义技术实验区。 -->
+        <div class="section-title"> <!-- 定义技术实验标题容器。 -->
+            <h2>技术实验入口</h2> <!-- 显示技术实验标题。 -->
+            <button id="soap-demo" type="button">调用 SOAP XML</button> <!-- 调用 SOAP 演示接口。 -->
+            <button id="matrix-demo" type="button">技术覆盖矩阵</button> <!-- 调用技术覆盖矩阵接口。 -->
+        </div> <!-- 结束技术实验标题容器。 -->
+        <div id="tech-output" class="code-box">REST、SOAP、JDBC、JPA、MyBatis、MyBatis-Plus、AOP、Interceptor、JSP、Servlet、ES6 Module、CommonJS、webpack、Vite 都在项目中有对应文件或入口。</div> <!-- 显示技术实验输出。 -->
+    </section> <!-- 结束技术实验区。 -->
+</main> <!-- 结束主内容布局。 -->
+<script type="module" src="/js/modules/app.js"></script> <!-- 使用 ES6 Module 加载前端入口。 -->
+</body> <!-- 结束页面主体。 -->
+</html> <!-- 结束 HTML 页面。 -->

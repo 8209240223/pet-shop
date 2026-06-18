@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?> <!-- 声明 Maven 文件使用 UTF-8 编码。 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"> <!-- 定义 Maven 项目根节点。 -->
+    <modelVersion>4.0.0</modelVersion> <!-- 指定 Maven POM 模型版本。 -->
+    <parent> <!-- 使用 Spring Boot 官方父工程统一管理依赖版本。 -->
+        <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 父工程组织编号。 -->
+        <artifactId>spring-boot-starter-parent</artifactId> <!-- 指定 Spring Boot 父工程名称。 -->
+        <version>2.7.18</version> <!-- 使用兼容 JSP/Servlet javax 体系的 Spring Boot 版本。 -->
+        <relativePath/> <!-- 表示父工程从 Maven 仓库解析。 -->
+    </parent> <!-- 结束父工程配置。 -->
+    <groupId>com.example</groupId> <!-- 指定本项目组织编号。 -->
+    <artifactId>pet-shop-learning</artifactId> <!-- 指定本项目构件名称。 -->
+    <version>1.0.0</version> <!-- 指定本项目版本号。 -->
+    <packaging>war</packaging> <!-- 使用 war 包便于 JSP 在 IntelliJ 和 Tomcat 环境中运行。 -->
+    <name>pet-shop-learning</name> <!-- 指定项目显示名称。 -->
+    <description>课程技术全覆盖的宠物商店学习网站</description> <!-- 描述项目用途。 -->
+    <properties> <!-- 定义可复用构建属性。 -->
+        <java.version>17</java.version> <!-- 使用 Java 17 作为 Spring Boot 2.7 的稳定编译目标。 -->
+        <mybatis.version>2.3.2</mybatis.version> <!-- 固定 MyBatis Spring Boot 启动器版本。 -->
+        <mybatis.plus.version>3.5.5</mybatis.plus.version> <!-- 固定 MyBatis-Plus 版本。 -->
+    </properties> <!-- 结束属性配置。 -->
+    <dependencies> <!-- 开始声明项目依赖。 -->
+        <dependency> <!-- 引入 Spring MVC、REST、JSON、内嵌 Tomcat 等 Web 能力。 -->
+            <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 组织编号。 -->
+            <artifactId>spring-boot-starter-web</artifactId> <!-- 指定 Web 启动器。 -->
+        </dependency> <!-- 结束 Web 依赖。 -->
+        <dependency> <!-- 外部 Tomcat 部署时由服务器提供 Servlet 容器，WAR 包中不再内置 Tomcat。 -->
+            <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 组织编号。 -->
+            <artifactId>spring-boot-starter-tomcat</artifactId> <!-- 指定 Tomcat 启动器。 -->
+            <scope>provided</scope> <!-- 声明 Tomcat 由外部服务器提供，适配真实 Tomcat 部署。 -->
+        </dependency> <!-- 结束外部 Tomcat 依赖配置。 -->
+        <dependency> <!-- 引入 Spring AOP 支持切面日志和权限学习。 -->
+            <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 组织编号。 -->
+            <artifactId>spring-boot-starter-aop</artifactId> <!-- 指定 AOP 启动器。 -->
+        </dependency> <!-- 结束 AOP 依赖。 -->
+        <dependency> <!-- 引入 Hibernate Validator 以演示参数校验。 -->
+            <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 组织编号。 -->
+            <artifactId>spring-boot-starter-validation</artifactId> <!-- 指定校验启动器。 -->
+        </dependency> <!-- 结束校验依赖。 -->
+        <dependency> <!-- 引入 Spring JDBC 和 JdbcTemplate。 -->
+            <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 组织编号。 -->
+            <artifactId>spring-boot-starter-jdbc</artifactId> <!-- 指定 JDBC 启动器。 -->
+        </dependency> <!-- 结束 JDBC 依赖。 -->
+        <dependency> <!-- 引入 Spring Data JPA 并通过 Hibernate 实现全自动 ORM。 -->
+            <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 组织编号。 -->
+            <artifactId>spring-boot-starter-data-jpa</artifactId> <!-- 指定 JPA 启动器。 -->
+        </dependency> <!-- 结束 JPA 依赖。 -->
+        <dependency> <!-- 引入 MyBatis 以演示半自动 ORM 和 XML 映射。 -->
+            <groupId>org.mybatis.spring.boot</groupId> <!-- 指定 MyBatis 组织编号。 -->
+            <artifactId>mybatis-spring-boot-starter</artifactId> <!-- 指定 MyBatis 启动器。 -->
+            <version>${mybatis.version}</version> <!-- 使用上方定义的 MyBatis 版本。 -->
+        </dependency> <!-- 结束 MyBatis 依赖。 -->
+        <dependency> <!-- 引入 MyBatis-Plus 以演示增强 Mapper。 -->
+            <groupId>com.baomidou</groupId> <!-- 指定 MyBatis-Plus 组织编号。 -->
+            <artifactId>mybatis-plus-boot-starter</artifactId> <!-- 指定 MyBatis-Plus 启动器。 -->
+            <version>${mybatis.plus.version}</version> <!-- 使用上方定义的 MyBatis-Plus 版本。 -->
+        </dependency> <!-- 结束 MyBatis-Plus 依赖。 -->
+        <dependency> <!-- 引入 H2 数据库以保证项目开箱即跑。 -->
+            <groupId>com.h2database</groupId> <!-- 指定 H2 组织编号。 -->
+            <artifactId>h2</artifactId> <!-- 指定 H2 数据库驱动。 -->
+            <scope>runtime</scope> <!-- 表示该依赖运行期使用。 -->
+        </dependency> <!-- 结束 H2 依赖。 -->
+        <dependency> <!-- 引入 JSP 编译器以运行传统 JSP 页面。 -->
+            <groupId>org.apache.tomcat.embed</groupId> <!-- 指定 Tomcat 组织编号。 -->
+            <artifactId>tomcat-embed-jasper</artifactId> <!-- 指定 JSP 编译组件。 -->
+        </dependency> <!-- 结束 JSP 编译器依赖。 -->
+        <dependency> <!-- 引入 JSTL 以支持 JSP 标签库学习。 -->
+            <groupId>javax.servlet</groupId> <!-- 指定 Javax Servlet 组织编号。 -->
+            <artifactId>jstl</artifactId> <!-- 指定 JSTL 依赖。 -->
+        </dependency> <!-- 结束 JSTL 依赖。 -->
+        <dependency> <!-- 引入 Lombok 编译期工具以减少模板代码。 -->
+            <groupId>org.projectlombok</groupId> <!-- 指定 Lombok 组织编号。 -->
+            <artifactId>lombok</artifactId> <!-- 指定 Lombok 依赖。 -->
+            <optional>true</optional> <!-- 表示 Lombok 不向下游传递。 -->
+        </dependency> <!-- 结束 Lombok 依赖。 -->
+    </dependencies> <!-- 结束依赖声明。 -->
+    <build> <!-- 开始声明构建配置。 -->
+        <plugins> <!-- 开始声明构建插件。 -->
+            <plugin> <!-- 引入 Spring Boot Maven 插件以支持运行和打包。 -->
+                <groupId>org.springframework.boot</groupId> <!-- 指定 Spring Boot 插件组织编号。 -->
+                <artifactId>spring-boot-maven-plugin</artifactId> <!-- 指定 Spring Boot Maven 插件。 -->
+                <configuration> <!-- 开始插件配置。 -->
+                    <excludes> <!-- 排除只在编译期使用的 Lombok。 -->
+                        <exclude> <!-- 定义一个排除项。 -->
+                            <groupId>org.projectlombok</groupId> <!-- 指定要排除的组织编号。 -->
+                            <artifactId>lombok</artifactId> <!-- 指定要排除的构件名称。 -->
+                        </exclude> <!-- 结束排除项。 -->
+                    </excludes> <!-- 结束排除配置。 -->
+                </configuration> <!-- 结束插件配置。 -->
+            </plugin> <!-- 结束 Spring Boot Maven 插件。 -->
+        </plugins> <!-- 结束构建插件声明。 -->
+    </build> <!-- 结束构建配置。 -->
+</project> <!-- 结束 Maven 项目定义。 -->

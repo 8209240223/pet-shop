@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?> <!-- 声明 MyBatis XML 文件编码。 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd"> <!-- 声明 MyBatis Mapper 文档类型。 -->
+<mapper namespace="com.example.petshop.mapper.ProductMapper"> <!-- 绑定 Java Mapper 接口命名空间。 -->
+    <resultMap id="ProductMap" type="com.example.petshop.domain.Product"> <!-- 定义数据库字段到商品对象的映射。 -->
+        <id column="id" property="id"/> <!-- 映射商品主键。 -->
+        <result column="name" property="name"/> <!-- 映射商品名称。 -->
+        <result column="category" property="category"/> <!-- 映射商品分类。 -->
+        <result column="price" property="price"/> <!-- 映射商品价格。 -->
+        <result column="stock" property="stock"/> <!-- 映射商品库存。 -->
+        <result column="description" property="description"/> <!-- 映射商品描述。 -->
+        <result column="image_url" property="imageUrl"/> <!-- 映射商品图片地址。 -->
+        <result column="featured" property="featured"/> <!-- 映射是否推荐。 -->
+    </resultMap> <!-- 结束商品结果映射。 -->
+    <select id="selectVisibleProducts" resultMap="ProductMap"> <!-- 定义查询全部商品的 XML SQL。 -->
+        SELECT id,name,category,price,stock,description,image_url,featured FROM products ORDER BY featured DESC,id ASC <!-- 使用 SQL 查询商品并排序。 -->
+    </select> <!-- 结束查询全部商品语句。 -->
+    <select id="searchByKeyword" resultMap="ProductMap"> <!-- 定义关键字查询商品的 XML SQL。 -->
+        SELECT id,name,category,price,stock,description,image_url,featured FROM products WHERE name LIKE CONCAT('%',#{keyword},'%') OR category LIKE CONCAT('%',#{keyword},'%') ORDER BY id ASC <!-- 使用动态参数模糊查询商品。 -->
+    </select> <!-- 结束关键字查询语句。 -->
+    <select id="selectByCategory" resultMap="ProductMap"> <!-- 定义分类查询商品的 XML SQL。 -->
+        SELECT id,name,category,price,stock,description,image_url,featured FROM products WHERE category = #{category} ORDER BY id ASC <!-- 按分类精确查询商品。 -->
+    </select> <!-- 结束分类查询语句。 -->
+    <select id="selectLowStock" resultMap="ProductMap"> <!-- 定义低库存查询商品的 XML SQL。 -->
+        SELECT id,name,category,price,stock,description,image_url,featured FROM products WHERE stock &lt;= #{limit} ORDER BY stock ASC,id ASC <!-- 查询库存低于阈值的商品。 -->
+    </select> <!-- 结束低库存查询语句。 -->
+    <select id="selectByPriceRange" resultMap="ProductMap"> <!-- 定义价格区间查询商品的 XML SQL。 -->
+        SELECT id,name,category,price,stock,description,image_url,featured FROM products WHERE price BETWEEN #{min} AND #{max} ORDER BY price ASC <!-- 查询指定价格区间内的商品。 -->
+    </select> <!-- 结束价格区间查询语句。 -->
+    <select id="selectCategories" resultType="string"> <!-- 定义查询商品分类的 XML SQL。 -->
+        SELECT DISTINCT category FROM products ORDER BY category ASC <!-- 查询所有不同的商品分类。 -->
+    </select> <!-- 结束分类列表查询语句。 -->
+    <select id="countByCategory" resultType="int"> <!-- 定义统计分类商品数量的 XML SQL。 -->
+        SELECT COUNT(*) FROM products WHERE category = #{category} <!-- 统计指定分类下商品数量。 -->
+    </select> <!-- 结束分类数量统计语句。 -->
+    <update id="updateStock"> <!-- 定义扣减库存的 XML SQL。 -->
+        UPDATE products SET stock = stock - #{quantity} WHERE id = #{id} AND stock &gt;= #{quantity} <!-- 在库存足够时扣减库存。 -->
+    </update> <!-- 结束扣减库存语句。 -->
+</mapper> <!-- 结束 MyBatis Mapper。 -->
